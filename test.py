@@ -38,7 +38,7 @@ def motionDetection():
         # initialize a container to put all bounding boxes
         # later to be grouped in
         rects = []
-        motion_counter = 0
+        global motion_counter
 
         for e in edges:
             # minimum size to draw a bounding box, otherwise ignore
@@ -50,17 +50,19 @@ def motionDetection():
             # be grouped as well
             rects.append([x, y, w, h])
             rects.append([x, y, w, h])
-    #         motion_text = "Detected"
-    #         if motion_text == "Detected":
+            motion_text = "Detected"
+        # motion counter algorithm
+        if motion_text == "Detected":
+            # increment by 1 if detected
             motion_counter += 1
-            if motion_counter >= 4:
-                # using Pushbullet's push notification method to send notification
+            # x amount of consecutive detected motion
+            # before sending an alert
+            if motion_counter >= 8:
                 push = pb.push_note("Motion Alert", "Motion detected!")
-                motion_text = "Detected"
-                # reset counter
                 motion_counter = 0
-
-
+        # if there's no motion, reset counter to 0
+        else:
+            motion_counter = 0
 
         # function to actually draw "bounding boxes"
         def draw(rects,color):
@@ -94,42 +96,34 @@ def motionDetection():
     exit(1)
 
 # function to check when sensor's pin goes HIGH
-def callback(pinNo):
-    if GPIO.input(pinNo):
+def callback(channel):
+    if GPIO.input(channel):
         print("Sound Detected!")
-        # using Pushbullet's push notification method to send notification
         push = pb.push_note("Noise Alert", "Sound detected!")
 
-# function to retrieve temperature readings using
-# Adafruit library with 11 being sensor identification
-# and 17 being GPIO pin number used
+# function to retrieve temperature readings
 def readTemp():
     while True:
         humidity, temperature = Adafruit_DHT.read_retry(11, 17)
         print("Temp: {0} C  Humidity: {1} %".format(temperature, humidity))
         try:
-            # when to send a notification, should change this value
-            # based on current environment
-            if temperature > 31:
+            if temperature > 28:
                 print("Too hot")
-                # using Pushbullet's push notification method to send notification with detected reading
                 push = pb.push_note("Temperature Alert", "Abnormal reading of {0} C detected!".format(temperature))
-         # ignore TypeError errors for when sensor fails to get a reading
-         # and returns a NoneType datatype which will
-         # forcefully exit the program
         except TypeError:
             pass
 
 if __name__ == '__main__':
+    # initialize a global motion counter variable to
+    # access from inside the function
+    global motion_counter
+    motion_counter = 0
     # setting up GPIO for sound sensor
-    #set pin used by sound sensor to GPIO4
-    pinNo = 4
-    # set GPIO mode to BCM
+    channel = 4
     GPIO.setmode(GPIO.BCM)
-    # set GPIO 4 to input mode
-    GPIO.setup(pinNo, GPIO.IN)
-    GPIO.add_event_detect(pinNo, GPIO.RISING, bouncetime=300)  # let us know when the pin goes HIGH
-    GPIO.add_event_callback(pinNo, callback)  # assign function to GPIO PIN, Run function on change
+    GPIO.setup(channel, GPIO.IN)
+    GPIO.add_event_detect(channel, GPIO.RISING, bouncetime=300)  # let us know when the pin goes HIGH
+    GPIO.add_event_callback(channel, callback)  # assign function to GPIO PIN, Run function on change
 
     # Pushbullet API key for sending push notifications
     pb = Pushbullet("o.e00CRKrMXGlOQ0VvtEUxId4yeGXTIgV1")

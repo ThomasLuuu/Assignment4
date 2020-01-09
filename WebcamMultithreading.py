@@ -2,7 +2,7 @@ import threading
 import cv2
 
 class WebcamMultithreading:
-    def __init__(self, src=0, width = 640, height = 480):
+    def __init__(self, src=-1, width = 640, height = 480):
         # init to start camera and set dimensions
         self.stream = cv2.VideoCapture(src)
         self.stream.set(cv2.CAP_PROP_FRAME_WIDTH, width)
